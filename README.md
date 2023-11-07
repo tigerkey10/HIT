@@ -7,7 +7,7 @@ $ python exp.py
 ```
 ### How to install requirements
 ```sh
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 
