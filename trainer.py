@@ -106,7 +106,7 @@ class Trainer:
             if isBest:
                 e_best, s_best, s_test_best_micro, s_test_best_macro, s_test_best_NA, s_test_best_biomarker, s_test_best_thera, patience = e, s_valid[2], s_test[1], s_test[2], s_test[4], s_test[5], s_test[6], 1
                 self.best_model_state = copy.deepcopy(self.model.state_dict())
-                torch.save(self.model.state_dict(), self.saved_model_path)
+                #torch.save(self.model.state_dict(), self.saved_model_path)
 
             else:
                 patience += 1
