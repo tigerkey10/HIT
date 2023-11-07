@@ -5,7 +5,7 @@ Hypergraph Interaction Transformer for therapeutic gene discovery (Authors' PyTo
 ```
 $ python exp.py
 ```
-The essential python packages are listed in '''requirements.txt'''. 
+The essential python packages are listed in ```requirements.txt```. 
 
 
 
