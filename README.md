@@ -1,5 +1,5 @@
 # HIT
-Hypergraph Interaction Transformer for therapeutic gene discovery (Authors' PyTorch Implementation)
+Hypergraph Interaction Transformer for therapeutic gene prediction (Authors' PyTorch Implementation)
 
 ### Run HIT 
 ```
