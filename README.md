@@ -62,6 +62,7 @@ You can access the deployed HIT webserver interface via the link below:
 
 ## 📖 Reference
 Kim, Kibeom, et al. "Therapeutic gene target prediction using novel deep hypergraph representation learning." Briefings in Bioinformatics 26.1 (Jan 2025).
+🔗 [Paper](https://doi.org/10.1093/bib/bbaf019)
 
 💡 If you use this code for research, please cite the above paper.
 
