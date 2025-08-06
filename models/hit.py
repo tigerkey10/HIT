@@ -9,7 +9,6 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc as auc3
 from sklearn.metrics import precision_recall_curve
 from sklearn.model_selection import StratifiedKFold
-
 from torch import nn
 from torch.nn import functional as F
 from einops import rearrange, repeat
@@ -21,7 +20,7 @@ class IntraMA(nn.Module):
         print('-- Initializing the IntraMutualAttention....')
         self.device = device
         self.num_heads = num_heads
-        
+
         # For hyperedges
         self.hyper_query_linears = nn.ModuleDict({
             str(i): nn.Linear(input_dim, embedding_dim * num_heads, bias=False) for i in [0, 2, 3, 4]
@@ -134,10 +133,10 @@ class InterMA(nn.Module):
         return final_output, scores
 
     
-class MetaHGT(nn.Module) : 
+class Mutual_Attention(nn.Module) : 
     def __init__(self, input_dim, embedding_dim, num_heads) : 
         super().__init__()
-        print('-- Initializing the Meta_HGT_Layer....')
+        print('-- Initializing the Mutual_Attention Layer....')
 
         # Intra Mutual Attention
         self.Intra = IntraMA(input_dim, embedding_dim, num_heads)
@@ -185,8 +184,15 @@ class Semantic_Attention(nn.Module) :
         
         assert emb1.shape == emb2.shape
 
-        repr_go = torch.mean(emb1, dim=0)
-        repr_gene = torch.mean(emb2, dim=0)
+        ### Fixes normalization issue
+        emb1_nzr_mask = torch.any(emb1 != 0, dim=1)
+        emb1_nzr = emb1[emb1_nzr_mask]
+        repr_go = torch.mean(emb1_nzr.to(torch.float), dim=0)
+
+        emb2_nzr_mask = torch.any(emb2 != 0, dim=1)
+        emb2_nzr = emb2[emb2_nzr_mask]
+        repr_gene = torch.mean(emb2_nzr.to(torch.float), dim=0)
+        ###
         
         repr = torch.stack([repr_go, repr_gene], dim=1).to(self.device)
         scores = torch.matmul(self.weight, repr)
@@ -220,13 +226,13 @@ class HIT(nn.Module) :
         self.embeddings = nn.Embedding(len(self.lists['total_embedding_matrix']), input_dim)
         
         # Layers for Gene
-        self.metaHGT_g = MetaHGT(input_dim, embedding_dim, num_heads)
+        self.MA_g = Mutual_Attention(input_dim, embedding_dim, num_heads)
 
         # Gene semantic attention layer
         self.semantic = Semantic_Attention(all_genes, integrated_gene_go_hyperedge_list, integrated_gene_go_node_list, self.lists['genes_in_integrated_gene_go_hyperedge_list'], input_dim, num_heads, self.device)
 
         # Layers for disease
-        self.metaHGT_d = MetaHGT(input_dim, embedding_dim, num_heads)
+        self.MA_d = Mutual_Attention(input_dim, embedding_dim, num_heads)
 
         types = []
         for i in range(62071) : 
@@ -256,7 +262,7 @@ class HIT(nn.Module) :
         gene_hyperedge_types = list(gene_hyperedge_types.detach().cpu().numpy())
 
         # calculating gene expression using the extracted embeddings 
-        gene_hyperedge_embeddings, gene_node_embeddings, scores_gene = self.metaHGT_g(gene_and_go_hyperedge_feature_matrix, gene_node_feature_matrix, gene_total_incidence_matrix, gene_node_types, gene_hyperedge_types)
+        gene_hyperedge_embeddings, gene_node_embeddings, scores_gene = self.MA_g(gene_and_go_hyperedge_feature_matrix, gene_node_feature_matrix, gene_total_incidence_matrix, gene_node_types, gene_hyperedge_types)
         embedding_matrix[self.lists['integrated_gene_go_hyperedge_list']] = gene_hyperedge_embeddings 
         gene_hyperedge_embeddings = embedding_matrix[self.lists['genes_in_integrated_gene_go_hyperedge_list']] 
         # final gene expression (consider all relationships) 
@@ -278,7 +284,7 @@ class HIT(nn.Module) :
         
         disease_hyperedge_types = self.types[self.lists['hpo_do_gene_all_keys']]
         disease_hyperedge_types = list(disease_hyperedge_types.detach().cpu().numpy())
-        disease_hyperedge_embeddings, disease_node_embeddings, scores_disease = self.metaHGT_d(disease_integrated_hyperedge_feature_matrix, disease_integrated_node_feature_matrix, disease_integrated_incidence, disease_node_types, disease_hyperedge_types)
+        disease_hyperedge_embeddings, disease_node_embeddings, scores_disease = self.MA_d(disease_integrated_hyperedge_feature_matrix, disease_integrated_node_feature_matrix, disease_integrated_incidence, disease_node_types, disease_hyperedge_types)
         # Skip connection for disease final output
         disease_expression = disease_node_embeddings + initial_disease_embedding
         return embedding_matrix, disease_hyperedge_embeddings, disease_expression, scores_disease

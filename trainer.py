@@ -4,7 +4,7 @@ from einops import rearrange
 from utils import get_DataLoader, split_data
 from utils import seed_everything, count_parameters, get_optimizer
 from models.modelwrapper import ModelWrapper
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from dataset import Dataset
 import torch
 import torch.nn as nn
@@ -35,6 +35,7 @@ class Trainer:
         self.define_model()
         self.best_model_state = self.model.state_dict()
         self.loss = nn.CrossEntropyLoss()
+        
             
     def setup_datasets(self):
         dataset_class = MODEL_NAME_MAP.get(self.params['name'].upper())
@@ -79,14 +80,14 @@ class Trainer:
         self.best_model_state = copy.deepcopy(self.model.state_dict())
         for e in range(1, epochs+1):
             if verbose:
-                print('\r---------------------------------------------------------------------------------------------------------------')
-                print('| Data  |  Epoch  | Loss      accuracy   f1-micro   f1-macro    f1-NA    f1-Biomarker    f1-Therapeutic   | BEST')
+                print('\r----------------------------------------------------------------------------------------------------------------------')
+                print('| Data  |  Epoch  | Loss      accuracy   f1-micro   f1-macro    f1-NA    f1-Biomarker    f1-Therapeutic     precision    recall | BEST')
 
             self.train = True
             self.model.train()
             l_train, s_train = self.step_batch(self.loader_train)
             if verbose:
-                print( f'\r| Train | {e}/{epochs} | {l_train:.6f}    {s_train[0]:.6f}   {s_train[1]:.6f}    {s_train[2]:.6f}   {s_train[4]:.6f}   {s_train[5]:.6f}   {s_train[6]:.6f}   |')
+                print( f'\r| Train | {e}/{epochs} | {l_train:.6f}    {s_train[0]:.6f}   {s_train[1]:.6f}    {s_train[2]:.6f}   {s_train[4]:.6f}   {s_train[5]:.6f}   {s_train[6]:.6f}   {s_train[7]:.6f}     {s_train[8]:.6f}   |')
 
 
             with torch.no_grad():
@@ -96,15 +97,15 @@ class Trainer:
                 isBest = True if s_valid[2] > s_best else False # best as Macro F1 Score
                 if verbose:
                     best_str = '->Best!' if isBest else f'[{patience}/{earlystop}]'
-                    print( f'\r| Valid | {e}/{epochs} | {l_valid:.6f}    {s_valid[0]:.6f}   {s_valid[1]:.6f}    {s_valid[2]:.6f}   {s_valid[4]:.6f}   {s_valid[5]:.6f}   {s_valid[6]:.6f}   |', best_str)
+                    print( f'\r| Valid | {e}/{epochs} | {l_valid:.6f}    {s_valid[0]:.6f}   {s_valid[1]:.6f}    {s_valid[2]:.6f}   {s_valid[4]:.6f}   {s_valid[5]:.6f}   {s_valid[6]:.6f}   {s_valid[7]:.6f}   {s_valid[8]:.6f}   |', best_str)
                  
                 l_test, s_test = self.step_batch(self.loader_test)
                 if verbose:
-                    print( f'\r| Test  | {e}/{epochs} | {l_test:.6f}    {s_test[0]:.6f}   {s_test[1]:.6f}    {s_test[2]:.6f}   {s_test[4]:.6f}   {s_test[5]:.6f}   {s_test[6]:.6f}    |')
+                    print( f'\r| Test  | {e}/{epochs} | {l_test:.6f}    {s_test[0]:.6f}   {s_test[1]:.6f}    {s_test[2]:.6f}   {s_test[4]:.6f}   {s_test[5]:.6f}   {s_test[6]:.6f}   {s_test[7]:.6f}   {s_test[8]:.6f}    |')
 
             isBest = True if s_valid[2] > s_best else False  # best as Macro F1 Score
             if isBest:
-                e_best, s_best, s_test_best_micro, s_test_best_macro, s_test_best_NA, s_test_best_biomarker, s_test_best_thera, patience = e, s_valid[2], s_test[1], s_test[2], s_test[4], s_test[5], s_test[6], 1
+                e_best, s_best, s_test_best_micro, s_test_best_macro, s_test_best_NA, s_test_best_biomarker, s_test_best_thera, s_test_best_precision, s_test_best_recall, patience = e, s_valid[2], s_test[1], s_test[2], s_test[4], s_test[5], s_test[6], s_test[7], s_test[8], 1
                 self.best_model_state = copy.deepcopy(self.model.state_dict())
                 #torch.save(self.model.state_dict(), self.saved_model_path)
 
@@ -112,10 +113,10 @@ class Trainer:
                 patience += 1
 
             if verbose:
-                print('-'*100)
+                print('-'*120)
                 print( f'| BEST  |Epoch:{e_best}| Valid Score: {s_best:.6f}   Test Score(micro): {s_test_best_micro:.6f}   Test Score(macro): {s_test_best_macro:.6f}')
-                print( f'| BEST  |Epoch:{e_best}| Test Score(NA): {s_test_best_NA:.6f}   Test Score(Biomarker): {s_test_best_biomarker:.6f}   Test Score(Therapeutic): {s_test_best_thera:.6f}  !')
-                print('-'*100)
+                print( f'| BEST  |Epoch:{e_best}| Test Score(NA): {s_test_best_NA:.6f}   Test Score(Biomarker): {s_test_best_biomarker:.6f}   Test Score(Therapeutic): {s_test_best_thera:.6f}  Test Score(Precision) : {s_test_best_precision:.6f} Test Score(Recall) : {s_test_best_recall:.6f}  !')
+                print('-'*120)
                 
             if patience >= earlystop:
                 break
@@ -123,8 +124,9 @@ class Trainer:
         l_test, s_test = self.step_batch(self.loader_test)
         if verbose:
             print('Valid Score %.4f (epoch : %d)' % (s_best, e_best))
-            print('Test Score %.4f %.4f %.4f %.4f %.4f %.4f %4f' % (s_test[0], s_test[1], s_test[2], s_test[3], s_test[4], s_test[5], s_test[6]))
+            print('Test Score %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f' % (s_test[0], s_test[1], s_test[2], s_test[3], s_test[4], s_test[5], s_test[6], s_test[7], s_test[8]))
             print('params : ', count_parameters(self.model))
+    
 
     def load_saved_model(self, path):
         self.model.load_state_dict(torch.load(path, map_location=self.device))
@@ -169,4 +171,7 @@ class Trainer:
         f1_NA = f1_score(y_label.cpu().detach().numpy(), y_pred_labels.cpu().detach().numpy(), average=None)[0]
         f1_biomarker = f1_score(y_label.cpu().detach().numpy(), y_pred_labels.cpu().detach().numpy(), average=None)[1]
         f1_therapeutic = f1_score(y_label.cpu().detach().numpy(), y_pred_labels.cpu().detach().numpy(), average=None)[2]
-        return acc, f1_micro, f1_macro, f1_weighted, f1_NA, f1_biomarker, f1_therapeutic 
+        precision = precision_score(y_label.cpu().detach().numpy(), y_pred_labels.cpu().detach().numpy(), average='macro')
+        recall = recall_score(y_label.cpu().detach().numpy(), y_pred_labels.cpu().detach().numpy(), average='macro')
+        
+        return acc, f1_micro, f1_macro, f1_weighted, f1_NA, f1_biomarker, f1_therapeutic, precision, recall
