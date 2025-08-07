@@ -3,7 +3,8 @@
 > An Explainable AI model for fast and precise identification of therapeutic gene candidates
 > by integrating complex disease-gene relationships and ontology information.
 
-<img width="4354" height="2475" alt="hit web2" src="https://github.com/user-attachments/assets/aaf2f583-af37-4066-a5f2-53c20a2a7161" />
+<img width="1438" height="807" alt="hit_figures" src="https://github.com/user-attachments/assets/77f3116c-87ab-4b54-9f66-59ed4c05e8eb" />
+
 
 
 ## 🚀 Key Features
