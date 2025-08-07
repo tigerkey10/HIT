@@ -56,7 +56,7 @@ You can access the deployed HIT webserver interface via the link below:
 
 🔗 [HIT Webserver](http://mlblabhit.org/)
 
-<img width="3931" height="2475" alt="hit web" src="https://github.com/user-attachments/assets/0ae26abe-aea7-43d7-868c-5d4b440b64df" />
+<img width="2492" height="1610" alt="image" src="https://github.com/user-attachments/assets/c7bff029-5546-4322-97b6-ede099c93893" />
 
 
 
