@@ -60,6 +60,7 @@ You can access the deployed HIT webserver interface via the link below:
 
 <img width="1286" height="1853" alt="image" src="https://github.com/user-attachments/assets/d92ad941-c7ea-4d12-982d-429d6148e4ad" />
 
+<img width="1888" height="1155" alt="image" src="https://github.com/user-attachments/assets/8961cb81-b65a-44c7-bd2c-018613028cba" />
 
 
 
