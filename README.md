@@ -40,7 +40,7 @@ $ cd HIT
 $ pip install -r requirements.txt
 ```
 
-We used NVIDIA RTX A6000 GPU with CUDA version 11.8.
+We used NVIDIA RTX A6000 GPU with CUDA version 11.7.
 
 ## ▶️ Usage
 Run the model:
